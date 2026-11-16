@@ -88,7 +88,7 @@
     owner: "{{ paradedb_uid }}"
     group: "{{ paradedb_gid }}"
 
-# The container's entrypoint changes the mode of this directory (bind-mounted to `/var/run/paradedbql`) to 3775
+# The container's entrypoint changes the mode of this directory (bind-mounted to `/var/run/postgresql`) to 3775
 # whenever it starts, so the same mode is used here (instead of fighting over it and always reporting a change).
 - name: Ensure ParadeDB run path exists
   ansible.builtin.file:

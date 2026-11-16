@@ -38,8 +38,8 @@
   ansible.builtin.fail:
     msg: >-
       Either a `paradedb_db_connection_string` variable or a `paradedb_connection_string_variable_name` needs to be provided to this playbook, via `--extra-vars`.
-      Example: `--extra-vars="paradedb_db_connection_string=paradedbql://username:password@localhost:<port>/database_name"` or `--extra-vars="paradedb_connection_string_variable_name=some_variable_connString"`
-  when: "paradedb_db_connection_string is not defined or not paradedb_db_connection_string.startswith('paradedbql://')"
+      Example: `--extra-vars="paradedb_db_connection_string=postgresql://username:password@localhost:<port>/database_name"` or `--extra-vars="paradedb_connection_string_variable_name=some_variable_connString"`
+  when: "paradedb_db_connection_string is not defined or not paradedb_db_connection_string.startswith('postgresql://')"
 
 # Defaults
 

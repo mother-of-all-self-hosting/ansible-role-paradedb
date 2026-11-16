@@ -20,7 +20,7 @@ paradedb_data_path: "{{ paradedb_base_path }}/data"
 # The host path where the ParadeDB unix socket directory is mounted (when enabled).
 paradedb_run_path: "{{ paradedb_base_path }}/run"
 # The path where the data directory is bind-mounted to inside the container.
-# Previously, we used `/var/lib/paradedbql/data` for this, but ParadeDB v18+ made `/var/lib/paradedbql` a VOLUME,
+# Previously, we used `/var/lib/postgresql/data` for this, but ParadeDB v18+ made `/var/lib/postgresql` a VOLUME,
 # so we can't bind-mount a directory beneath it. It's better to use something completely different (like `/data`) instead.
 # Related to: `paradedb_server_environment_variable_pgdata`
 paradedb_data_in_container_path: "/data"
@@ -103,7 +103,7 @@ paradedb_systemd_services_to_stop_for_maintenance_list_custom: []
 paradedb_systemd_service_stop_originally_stopped_after_preparation: false
 
 # paradedb_vacuum_presets contains various presets related to vacuuming (`--tags=run-paradedb-vacuum`).
-# See: https://www.paradedbql.org/docs/current/sql-vacuum.html
+# See: https://www.postgresql.org/docs/current/sql-vacuum.html
 #
 # `stopServices` specifies whether services (see `paradedb_systemd_services_to_stop_for_maintenance_list`)
 # need to be stopped before a vacuuming query runs.
@@ -278,7 +278,7 @@ paradedb_container_mount_etc_passwd_enabled: "{{ paradedb_uid != 0 }}"
 # Specify the size of the container's tmpfs volume (/tmp)
 paradedb_container_tmpfs_tmp_size: 128m
 
-# Specify the size of the container's tmpfs volume (/run/paradedbql)
+# Specify the size of the container's tmpfs volume (/run/postgresql)
 paradedb_container_tmpfs_run_size: 128m
 
 # Controls whether the ParadeDB unix socket directory is bind-mounted from the host.
@@ -287,7 +287,7 @@ paradedb_container_tmpfs_run_size: 128m
 paradedb_container_unix_socket_enabled: true
 
 # The unix socket directory inside the container.
-paradedb_run_path_in_container: "/run/paradedbql"
+paradedb_run_path_in_container: "/run/postgresql"
 
 # Controls whether the helper CLI scripts prefer unix socket connections (when available)
 # instead of TCP. This does not affect server behavior.
@@ -329,7 +329,7 @@ paradedb_process_extra_arguments_custom: []
 # Controls whether the ParadeDB container exposes a port (tcp/5432 in the
 # container) that can be used to access the database from outside the container (e.g. with psql)
 #
-# psql paradedbql://username:password@localhost:<port>/database_name
+# psql postgresql://username:password@localhost:<port>/database_name
 #
 # Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
 paradedb_container_paradedb_bind_port: ""
@@ -462,11 +462,11 @@ paradedb_managed_databases_connection_retry_delay_seconds: 3
 # Defines the `PGDATA` environment variable for the ParadeDB server.
 #
 # We explicitly set it to avoid surprises caused by ParadeDB >= v18 which changed the default value for this
-# (from `/var/lib/paradedbql/data` to `/var/lib/paradedbql/MAJOR/docker`).
+# (from `/var/lib/postgresql/data` to `/var/lib/postgresql/MAJOR/docker`).
 # Ref: https://github.com/docker-library/paradedb/pull/1259
 #
-# We intentionally set this to `/data` (see `paradedb_data_in_container_path`), not `/var/lib/paradedbql/data` (like the old value),
-# because `/var/lib/paradedbql` is defined as a VOLUME already in the official container image,
+# We intentionally set this to `/data` (see `paradedb_data_in_container_path`), not `/var/lib/postgresql/data` (like the old value),
+# because `/var/lib/postgresql` is defined as a VOLUME already in the official container image,
 # which makes it impossible to bind-mount directories beneath it.
 # Ref: https://github.com/docker-library/paradedb/pull/1259#issuecomment-2215489177
 #
