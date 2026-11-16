@@ -8,19 +8,12 @@
 #
 # Usage: bin/compute-next-tag.sh
 #
-# This role tracks one ParadeDB version per supported major
-# (`paradedb_container_image_v15_version`, `paradedb_container_image_v16_version`, ...).
-# Only the newest tracked major defines the tag, which looks like
-# `v<newest ParadeDB version>-<release>`:
+# Tags look like `v<ParadeDB version>-<release>`:
 #
-# - if defaults/main.yml points at a newest version that has never been
-#   released, the release counter restarts at 0 (`v18.6-0`)
-# - otherwise the counter is incremented (`v18.6-1`), but only if something
+# - if defaults/main.yml points at a ParadeDB version that has never been
+#   released, the release counter restarts at 0 (`v0.63.2-0`)
+# - otherwise the counter is incremented (`v0.63.2-1`), but only if something
 #   that actually affects the role has changed since the last release
-#
-# A bump to an older major (say v15) therefore does not produce a misleading
-# `v15.x` tag - it increments the newest version's counter, and the fix still
-# reaches consumers through that release.
 #
 # Determining the version from defaults/main.yml, rather than from the commit
 # message of the pull request that got merged, makes the result independent of
@@ -43,20 +36,19 @@ role_defining_paths=(
 	'meta'
 	'tasks'
 	'templates'
-	'vars'
 )
 
-# The value of the highest-numbered paradedb_container_image_v<N>_version.
-version="$(grep -E '^paradedb_container_image_v[0-9]+_version:' "$defaults_path" \
-	| sed -E 's|^paradedb_container_image_v([0-9]+)_version:[[:space:]]*"?([^"[:space:]]+)"?.*$|\1 \2|' \
-	| sort -k1,1n | tail -n1 | cut -d' ' -f2)"
+version="$(sed -nE 's|^paradedb_version:[[:space:]]*"?([^"[:space:]]+)"?.*$|\1|p' "$defaults_path" | head -n1)"
 
 if [ -z "$version" ]; then
-	echo >&2 "Could not determine the newest ParadeDB version from $defaults_path"
+	echo >&2 "Could not determine the ParadeDB version from $defaults_path"
 	exit 1
 fi
 
-tag_prefix="v${version}-"
+# The version values do not carry a leading `v` (e.g. `0.63.2`), but the tags
+# do (`v0.63.2-0`). Stripping any `v` before prepending one keeps this correct
+# even if the version values ever start carrying one.
+tag_prefix="v${version#v}-"
 
 # Of all releases of this version, the highest release number. Sorted
 # numerically, so that -10 is recognized as newer than -9.

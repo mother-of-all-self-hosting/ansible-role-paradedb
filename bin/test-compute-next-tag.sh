@@ -29,15 +29,15 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Starts a scenario with a repository tracking ParadeDB 17.11 and 18.6, whose
-# newest version has already seen two releases (v18.6-0 and v18.6-1).
+# Starts a scenario with a repository at ParadeDB 0.63.2 which has already
+# seen two releases of it (v0.63.2-0 and v0.63.2-1).
 scenario() {
 	echo "$1"
 
 	cleanup
 	workdir="$(mktemp -d)"
 
-	mkdir -p "$workdir/bin" "$workdir/defaults" "$workdir/tasks" "$workdir/vars"
+	mkdir -p "$workdir/bin" "$workdir/defaults" "$workdir/tasks" "$workdir/templates"
 	cp "$script_under_test" "$workdir/bin/"
 	cd "$workdir"
 
@@ -46,12 +46,9 @@ scenario() {
 	git config user.name 'Test'
 	git config commit.gpgsign false
 
-	{
-		printf 'paradedb_container_image_v17_version: "17.11"\n'
-		printf 'paradedb_container_image_v18_version: "18.6"\n'
-	} > defaults/main.yml
+	printf 'paradedb_version: 0.63.2\n' > defaults/main.yml
 	printf 'placeholder\n' > tasks/main.yml
-	printf 'placeholder\n' > vars/main.yml
+	printf 'placeholder\n' > templates/env.j2
 	printf 'placeholder\n' > README.md
 
 	git add -A
@@ -59,7 +56,7 @@ scenario() {
 
 	local release_number
 	for release_number in 0 1; do
-		git tag "v18.6-$release_number"
+		git tag "v0.63.2-$release_number"
 	done
 }
 
@@ -92,35 +89,49 @@ expect() {
 	fi
 }
 
-bump_newest="sed -i 's|18.6|18.7|' defaults/main.yml"
-bump_older="sed -i 's|17.11|17.12|' defaults/main.yml"
-add_v19='printf '"'"'paradedb_container_image_v19_version: "19.0"\n'"'"' >> defaults/main.yml'
+bump_version="sed -i 's|paradedb_version: 0.63.2|paradedb_version: 0.64.0|' defaults/main.yml"
+revert_version="sed -i 's|paradedb_version: 0.64.0|paradedb_version: 0.63.2|' defaults/main.yml"
+prefix_version="sed -i 's|paradedb_version: 0.63.2|paradedb_version: v0.64.0|' defaults/main.yml"
 edit_task="printf 'a task\n' >> tasks/main.yml"
-edit_vars="printf 'a var\n' >> vars/main.yml"
+edit_template="printf 'a line\n' >> templates/env.j2"
 edit_readme="printf 'documentation\n' >> README.md"
+edit_script="printf '# a comment\n' >> bin/compute-next-tag.sh"
 
-scenario 'Bumps to the newest and to an older major, in either order'
-expect 'older major (v17)'  v18.6-2 "$(merge "$bump_older")"
-expect 'newest major (v18)' v18.7-0 "$(merge "$bump_newest")"
+# The two merge orders below apply the same updates and must each end up with
+# every update released exactly once, whichever order they arrive in.
 
-scenario 'Bumps to the newest and to an older major, the other way around'
-expect 'newest major (v18)' v18.7-0 "$(merge "$bump_newest")"
-expect 'older major (v17)'  v18.7-1 "$(merge "$bump_older")"
+scenario 'A version bump merged before other role changes'
+expect 'version bump' v0.64.0-0 "$(merge "$bump_version")"
+expect 'task edit'    v0.64.0-1 "$(merge "$edit_task")"
+expect 'template'     v0.64.0-2 "$(merge "$edit_template")"
 
-scenario 'A new major appears'
-expect 'new major (v19)' v19.0-0 "$(merge "$add_v19")"
-expect 'older major'     v19.0-1 "$(merge "$bump_older")"
+scenario 'A version bump merged after other role changes'
+expect 'task edit'    v0.63.2-2 "$(merge "$edit_task")"
+expect 'version bump' v0.64.0-0 "$(merge "$bump_version")"
 
 scenario 'Commits that do not affect the role'
-expect 'README' ''        "$(merge "$edit_readme")"
-expect 'a task' v18.6-2   "$(merge "$edit_task")"
-expect 'vars'   v18.6-3   "$(merge "$edit_vars")"
+expect 'README'   ''         "$(merge "$edit_readme")"
+expect 'a script' ''         "$(merge "$edit_script")"
+expect 'a task'   v0.63.2-2  "$(merge "$edit_task")"
 
 scenario 'Release numbers past 9'
 for release_number in 2 3 4 5 6 7 8 9 10; do
-	git tag "v18.6-$release_number"
+	git tag "v0.63.2-$release_number"
 done
-expect 'a task' v18.6-11 "$(merge "$edit_task")"
+expect 'a task' v0.63.2-11 "$(merge "$edit_task")"
+
+scenario 'Reverting to an already released version'
+merge "$bump_version" > /dev/null
+# The role is now identical to what v0.63.2-1 already published, so there is
+# nothing new to release.
+expect 'a revert' ''         "$(merge "$revert_version")"
+
+scenario 'Reverting to an already released version, with a change'
+merge "$bump_version" > /dev/null
+expect 'a revert' v0.63.2-2  "$(merge "$revert_version && $edit_task")"
+
+scenario 'A version value carrying a leading v does not double it in the tag'
+expect 'version bump' v0.64.0-0 "$(merge "$prefix_version")"
 
 if [ "$failures" -gt 0 ]; then
 	echo >&2 "$failures scenario(s) behaved unexpectedly"
