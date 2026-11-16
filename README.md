@@ -30,9 +30,7 @@ Please refer to [this page](https://github.com/mother-of-all-self-hosting/mash-p
 
 ### Collaborating on Radicle
 
-This role is developed and distributed on Radicle, and you can freely open an issue or a "patch" for updating it.
-
-Please follow [this "Getting Started" guide](https://radicle.dev/guides/quick-start) on the official documentation for the basic installation and usage of the Radicle toolchain. You might also want to take a look at [Radicle Desktop](https://radicle.network/desktop) for simple collaboration.
+This repository can be cloned from the [Radicle](https://radicle.dev) network, a peer-to-peer code collaboration stack built on Git. Please follow [this "Getting Started" guide](https://radicle.dev/guides/quick-start) on the official documentation for the basic installation and usage of the Radicle toolchain. You might also want to take a look at [Radicle Desktop](https://radicle.network/desktop) for simple collaboration.
 
 You can clone the repository by running the command below:
 
@@ -57,3 +55,9 @@ just prek-install-git-pre-commit-hook
 This role supports [Molecule](https://docs.ansible.com/projects/molecule/), an Ansible testing framework designed for developing and testing Ansible collections, playbooks, and roles.
 
 Refer to [this page](./molecule/README.md) for details about how to utilize it.
+
+### Releases
+
+Tags are created on the GitHub workflow by [`.github/workflows/autotag.yml`](.github/workflows/autotag.yml), which asks [`bin/compute-next-tag.sh`](bin/compute-next-tag.sh) what the commit on `main` should be released as. The answer comes from the version pinned in [`defaults/main.yml`](defaults/main.yml) and from the tags that already exist, so a commit that only touches documentation or CI is not released at all, and any change to the role itself is — without waiting for a dependency bump to carry it along.
+
+[`bin/test-compute-next-tag.sh`](bin/test-compute-next-tag.sh) exercises that script against throwaway repositories, and runs as a prek hook.
