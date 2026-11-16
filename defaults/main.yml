@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2023, 2024 Nikita Chernyi
 # SPDX-FileCopyrightText: 2023-2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -25,6 +26,9 @@ paradedb_run_path: "{{ paradedb_base_path }}/run"
 # Related to: `paradedb_server_environment_variable_pgdata`
 paradedb_data_in_container_path: "/data"
 paradedb_bin_path: "{{ paradedb_base_path }}/bin"
+
+# renovate: datasource=docker depName=paradedb/paradedb versioning=semver
+paradedb_version: 0.26.6
 
 paradedb_uid: ""
 paradedb_gid: ""
@@ -159,45 +163,14 @@ paradedb_container_image_registry_prefix_upstream_default: "docker.io/"
 # > LOG:  startup process (PID 37) was terminated by signal 11: Segmentation fault
 paradedb_container_image_suffix: "{{ '-alpine' if paradedb_architecture in ['amd64', 'arm64'] else '' }}"
 
-paradedb_container_image_name: paradedb
+paradedb_container_image_name: paradedb/paradedb
 
-paradedb_container_image_v9: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v9_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v9_version: "9.6.24"
-
-paradedb_container_image_v10: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v10_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v10_version: "10.23"
-
-paradedb_container_image_v11: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v11_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v11_version: "11.22"
-
-paradedb_container_image_v12: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v12_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v12_version: "12.22"
-
-paradedb_container_image_v13: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v13_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v13_version: "13.23"
-
-paradedb_container_image_v14: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v14_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v14_version: "14.25"
-
-paradedb_container_image_v15: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v15_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v15_version: "15.20"
-
-paradedb_container_image_v16: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v16_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v16_version: "16.16"
-
-paradedb_container_image_v17: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v17_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v17_version: "17.12"
-
-paradedb_container_image_v18: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_container_image_v18_version }}{{ paradedb_container_image_suffix }}"
-paradedb_container_image_v18_version: "18.7"
+paradedb_container_image_v15: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_version }}-pg15"
+paradedb_container_image_v16: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_version }}-pg16"
+paradedb_container_image_v17: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_version }}-pg17"
+paradedb_container_image_v18: "{{ paradedb_container_image_registry_prefix }}{{ paradedb_container_image_name }}:{{ paradedb_version }}-pg18"
 
 paradedb_container_image_by_major_version:
-  "9": "{{ paradedb_container_image_v9 }}"
-  "10": "{{ paradedb_container_image_v10 }}"
-  "11": "{{ paradedb_container_image_v11 }}"
-  "12": "{{ paradedb_container_image_v12 }}"
-  "13": "{{ paradedb_container_image_v13 }}"
-  "14": "{{ paradedb_container_image_v14 }}"
   "15": "{{ paradedb_container_image_v15 }}"
   "16": "{{ paradedb_container_image_v16 }}"
   "17": "{{ paradedb_container_image_v17 }}"
