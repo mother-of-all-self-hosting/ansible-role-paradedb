@@ -29,7 +29,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Starts a scenario with a repository tracking Postgres 17.11 and 18.6, whose
+# Starts a scenario with a repository tracking ParadeDB 17.11 and 18.6, whose
 # newest version has already seen two releases (v18.6-0 and v18.6-1).
 scenario() {
 	echo "$1"
@@ -47,8 +47,8 @@ scenario() {
 	git config commit.gpgsign false
 
 	{
-		printf 'postgres_container_image_v17_version: "17.11"\n'
-		printf 'postgres_container_image_v18_version: "18.6"\n'
+		printf 'paradedb_container_image_v17_version: "17.11"\n'
+		printf 'paradedb_container_image_v18_version: "18.6"\n'
 	} > defaults/main.yml
 	printf 'placeholder\n' > tasks/main.yml
 	printf 'placeholder\n' > vars/main.yml
@@ -94,7 +94,7 @@ expect() {
 
 bump_newest="sed -i 's|18.6|18.7|' defaults/main.yml"
 bump_older="sed -i 's|17.11|17.12|' defaults/main.yml"
-add_v19='printf '"'"'postgres_container_image_v19_version: "19.0"\n'"'"' >> defaults/main.yml'
+add_v19='printf '"'"'paradedb_container_image_v19_version: "19.0"\n'"'"' >> defaults/main.yml'
 edit_task="printf 'a task\n' >> tasks/main.yml"
 edit_vars="printf 'a var\n' >> vars/main.yml"
 edit_readme="printf 'documentation\n' >> README.md"

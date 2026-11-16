@@ -3,119 +3,119 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- ansible.builtin.import_tasks: "{{ role_path }}/tasks/migrate_postgres_data_directory.yml"
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/migrate_paradedb_data_directory.yml"
 
-- ansible.builtin.import_tasks: "{{ role_path }}/tasks/detect_existing_postgres_version.yml"
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/detect_existing_paradedb_version.yml"
 
-- when: postgres_detected_existing | bool
+- when: paradedb_detected_existing | bool
   block:
-    - name: Abort if on an unsupported Postgres version
+    - name: Abort if on an unsupported ParadeDB version
       ansible.builtin.fail:
-        msg: "You're on Postgres {{ postgres_detected_version }}, which is no longer supported. To upgrade, see docs/maintenance-postgres.md"
-      when: "postgres_detected_version_number == 9"
+        msg: "You're on ParadeDB {{ paradedb_detected_version }}, which is no longer supported. To upgrade, see docs/maintenance-paradedb.md"
+      when: "paradedb_detected_version_number == 9"
 
-    - name: Inject warning if detected Postgres version number not eligible
-      when: "postgres_detected_version_number not in postgres_eligible_versions"
+    - name: Inject warning if detected ParadeDB version number not eligible
+      when: "paradedb_detected_version_number not in paradedb_eligible_versions"
       ansible.builtin.set_fact:
         devture_playbook_runtime_messages_list: |
           {{
             devture_playbook_runtime_messages_list | default([])
             +
             [
-              "WARNING: We detected that Postgres version (" + postgres_detected_version_number | string + ") is already installed, but it's not normally eligible for installation for your setup. You or some other role is currently restricting `postgres_allowed_versions` to " + postgres_allowed_versions | to_json + " for compatibility reasons. Perhaps this other role does not support other Postgres versions. You can suppress this warning by force-settting `postgres_allowed_versions` to something like [" + postgres_detected_version_number | to_json + "], though it would be better to figure out where the restriction comes from and to potentially downgrade Postgres to the maximum allowed version (" + postgres_eligible_version_max | string + ") imposed by the current restrictions.",
+              "WARNING: We detected that ParadeDB version (" + paradedb_detected_version_number | string + ") is already installed, but it's not normally eligible for installation for your setup. You or some other role is currently restricting `paradedb_allowed_versions` to " + paradedb_allowed_versions | to_json + " for compatibility reasons. Perhaps this other role does not support other ParadeDB versions. You can suppress this warning by force-settting `paradedb_allowed_versions` to something like [" + paradedb_detected_version_number | to_json + "], though it would be better to figure out where the restriction comes from and to potentially downgrade ParadeDB to the maximum allowed version (" + paradedb_eligible_version_max | string + ") imposed by the current restrictions.",
             ]
           }}
 
-    - name: Inject warning if on maximum eligible Postgres version, but held back from the maximum known version
-      when: "postgres_detected_version_number == postgres_eligible_version_max and postgres_eligible_version_max < postgres_known_version_max"
+    - name: Inject warning if on maximum eligible ParadeDB version, but held back from the maximum known version
+      when: "paradedb_detected_version_number == paradedb_eligible_version_max and paradedb_eligible_version_max < paradedb_known_version_max"
       ansible.builtin.set_fact:
         devture_playbook_runtime_messages_list: |
           {{
             devture_playbook_runtime_messages_list | default([])
             +
             [
-              "NOTE: We detected that Postgres version (" + postgres_detected_version_number | string + ") is already installed. While a newer version (" + postgres_known_version_max | string + ") is normally available, it's not eligible for installation for your setup. You or some other role is currently restricting `postgres_allowed_versions` (likely via `postgres_allowed_versions_auto` or `postgres_allowed_versions_custom`) to " + postgres_allowed_versions | to_json + " for compatibility reasons. Perhaps this other role does not support the newer Postgres version.",
+              "NOTE: We detected that ParadeDB version (" + paradedb_detected_version_number | string + ") is already installed. While a newer version (" + paradedb_known_version_max | string + ") is normally available, it's not eligible for installation for your setup. You or some other role is currently restricting `paradedb_allowed_versions` (likely via `paradedb_allowed_versions_auto` or `paradedb_allowed_versions_custom`) to " + paradedb_allowed_versions | to_json + " for compatibility reasons. Perhaps this other role does not support the newer ParadeDB version.",
             ]
           }}
 
-    - name: Inject warning if on an old version of Postgres
+    - name: Inject warning if on an old version of ParadeDB
       ansible.builtin.set_fact:
         devture_playbook_runtime_messages_list: |
           {{
             devture_playbook_runtime_messages_list | default([])
             +
             [
-              "NOTE: Your setup is on an old Postgres version (" + postgres_detected_version_number | string + ") and can be upgraded to version " + postgres_available_upgrade_versions | max | string + ". To upgrade, re-run the playbook with `--tags=upgrade-postgres` on its own. Do not combine it with `setup-all`/`setup-postgres`/`install-all`/`install-postgres`. See your playbook's Postgres maintenance documentation for details."
+              "NOTE: Your setup is on an old ParadeDB version (" + paradedb_detected_version_number | string + ") and can be upgraded to version " + paradedb_available_upgrade_versions | max | string + ". To upgrade, re-run the playbook with `--tags=upgrade-paradedb` on its own. Do not combine it with `setup-all`/`setup-paradedb`/`install-all`/`install-paradedb`. See your playbook's ParadeDB maintenance documentation for details."
             ]
           }}
-      when: "postgres_detected_existing and postgres_available_upgrade_versions | length > 0"
+      when: "paradedb_detected_existing and paradedb_available_upgrade_versions | length > 0"
 
     # If we have found an existing version (installed from before), we use its corresponding container image.
-    # If not, we let `postgres_container_image_to_use` default to the latest eligible version.
+    # If not, we let `paradedb_container_image_to_use` default to the latest eligible version.
     #
-    # Upgrading is supposed to be performed separately and explicitly (see `upgrade_postgres.yml`).
+    # Upgrading is supposed to be performed separately and explicitly (see `upgrade_paradedb.yml`).
     - ansible.builtin.set_fact:
-        postgres_container_image_to_use: "{{ postgres_detected_version_corresponding_container_image }}"
+        paradedb_container_image_to_use: "{{ paradedb_detected_version_corresponding_container_image }}"
 
 # Even if we don't run the internal server, we still need this for running the CLI
-- name: Ensure Postgres container image is pulled
+- name: Ensure ParadeDB container image is pulled
   community.docker.docker_image_pull:
-    name: "{{ postgres_container_image_to_use }}"
+    name: "{{ paradedb_container_image_to_use }}"
     pull: always
-  register: postgres_container_image_pull_result
+  register: paradedb_container_image_pull_result
   retries: "{{ devture_playbook_help_container_retries_count }}"
   delay: "{{ devture_playbook_help_container_retries_delay }}"
-  until: postgres_container_image_pull_result is not failed
+  until: paradedb_container_image_pull_result is not failed
 
 # Owned by root: root runs the scripts in the bin path and reads the environment variables files.
 # Whoever owns the base path could rename the bin path (even a root-owned one) and put another in its place.
-- name: Ensure Postgres base paths exist
+- name: Ensure ParadeDB base paths exist
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: "0750"
     owner: root
-    group: "{{ postgres_gid }}"
+    group: "{{ paradedb_gid }}"
   with_items:
-    - "{{ postgres_base_path }}"
-    - "{{ postgres_bin_path }}"
+    - "{{ paradedb_base_path }}"
+    - "{{ paradedb_bin_path }}"
 
-- name: Ensure Postgres data path exists
+- name: Ensure ParadeDB data path exists
   ansible.builtin.file:
-    path: "{{ postgres_data_path }}"
+    path: "{{ paradedb_data_path }}"
     state: directory
     mode: "0700"
-    owner: "{{ postgres_uid }}"
-    group: "{{ postgres_gid }}"
+    owner: "{{ paradedb_uid }}"
+    group: "{{ paradedb_gid }}"
 
-# The container's entrypoint changes the mode of this directory (bind-mounted to `/var/run/postgresql`) to 3775
+# The container's entrypoint changes the mode of this directory (bind-mounted to `/var/run/paradedbql`) to 3775
 # whenever it starts, so the same mode is used here (instead of fighting over it and always reporting a change).
-- name: Ensure Postgres run path exists
+- name: Ensure ParadeDB run path exists
   ansible.builtin.file:
-    path: "{{ postgres_run_path }}"
+    path: "{{ paradedb_run_path }}"
     state: directory
     mode: "3775"
-    owner: "{{ postgres_uid }}"
-    group: "{{ postgres_gid }}"
-  when: postgres_container_unix_socket_enabled
+    owner: "{{ paradedb_uid }}"
+    group: "{{ paradedb_gid }}"
+  when: paradedb_container_unix_socket_enabled
 # Separate task to allow different permissions for unix socket access.
 
-- name: Ensure Postgres environment variables file created
+- name: Ensure ParadeDB environment variables file created
   ansible.builtin.template:
     src: "{{ role_path }}/templates/{{ item }}.j2"
-    dest: "{{ postgres_base_path }}/{{ item }}"
+    dest: "{{ paradedb_base_path }}/{{ item }}"
     owner: root
-    group: "{{ postgres_gid }}"
+    group: "{{ paradedb_gid }}"
     mode: "0640"
   with_items:
-    - "env-postgres-psql"
-    - "env-postgres-server"
-  register: postgres_config_file_result
+    - "env-paradedb-psql"
+    - "env-paradedb-server"
+  register: paradedb_config_file_result
 
-- name: Ensure Postgres scripts created
+- name: Ensure ParadeDB scripts created
   ansible.builtin.template:
     src: "{{ role_path }}/templates/bin/{{ item }}.j2"
-    dest: "{{ postgres_bin_path }}/{{ item }}"
+    dest: "{{ paradedb_bin_path }}/{{ item }}"
     owner: root
     group: root
     mode: "0755"
@@ -124,41 +124,41 @@
     - cli-non-interactive
     - dump-all
 
-- name: Ensure Postgres container network is created
+- name: Ensure ParadeDB container network is created
   community.docker.docker_network:
     enable_ipv6: "{{ devture_systemd_docker_base_ipv6_enabled }}"
-    name: "{{ postgres_container_network }}"
+    name: "{{ paradedb_container_network }}"
     driver: bridge
     driver_options: "{{ devture_systemd_docker_base_container_networks_driver_options }}"
 
-- name: Ensure Postgres systemd service installed
+- name: Ensure ParadeDB systemd service installed
   ansible.builtin.template:
-    src: "{{ role_path }}/templates/systemd/postgres.service.j2"
-    dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ postgres_identifier }}.service"
+    src: "{{ role_path }}/templates/systemd/paradedb.service.j2"
+    dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ paradedb_identifier }}.service"
     mode: "0644"
-  register: postgres_systemd_service_result
+  register: paradedb_systemd_service_result
 
-- name: Determine whether Postgres needs a restart
+- name: Determine whether ParadeDB needs a restart
   ansible.builtin.set_fact:
-    postgres_restart_necessary: >-
+    paradedb_restart_necessary: >-
       {{
-        postgres_config_file_result.changed | default(false)
-        or postgres_systemd_service_result.changed | default(false)
-        or postgres_container_image_pull_result.changed | default(false)
+        paradedb_config_file_result.changed | default(false)
+        or paradedb_systemd_service_result.changed | default(false)
+        or paradedb_container_image_pull_result.changed | default(false)
       }}
 
-- name: Ensure managed Postgres databases prepared
+- name: Ensure managed ParadeDB databases prepared
   ansible.builtin.include_tasks:
     file: "{{ role_path }}/tasks/util/prepare_managed_databases.yml"
     apply:
       tags:
         - always
-  when: "postgres_managed_databases|length > 0"
+  when: "paradedb_managed_databases|length > 0"
 
-- name: Check existence of Postgres backup data path
+- name: Check existence of ParadeDB backup data path
   ansible.builtin.stat:
-    path: "{{ postgres_data_path }}-auto-upgrade-backup"
-  register: postgres_data_backup_path_stat
+    path: "{{ paradedb_data_path }}-auto-upgrade-backup"
+  register: paradedb_data_backup_path_stat
 
 - name: Inject warning if backup data remains
   ansible.builtin.set_fact:
@@ -167,7 +167,7 @@
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "NOTE: You have some Postgres backup data in `" + postgres_data_path + "-auto-upgrade-backup`, which was created during the last major Postgres update you ran. If your setup works well after this upgrade, feel free to delete this whole directory."
+          "NOTE: You have some ParadeDB backup data in `" + paradedb_data_path + "-auto-upgrade-backup`, which was created during the last major ParadeDB update you ran. If your setup works well after this upgrade, feel free to delete this whole directory."
         ]
       }}
-  when: "postgres_data_backup_path_stat.stat.exists"
+  when: "paradedb_data_backup_path_stat.stat.exists"

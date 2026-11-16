@@ -3,53 +3,53 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Make Postgres reject connections ({{ postgres_verify_failure_case }})
-  when: postgres_verify_failure_reject_connections | bool
+- name: Make ParadeDB reject connections ({{ paradedb_verify_failure_case }})
+  when: paradedb_verify_failure_reject_connections | bool
   ansible.builtin.command:
-    cmd: "{{ postgres_verify_reject_connections_command }}"
+    cmd: "{{ paradedb_verify_reject_connections_command }}"
   changed_when: true
 
-- name: Prepare the managed databases, expecting it to fail ({{ postgres_verify_failure_case }})
+- name: Prepare the managed databases, expecting it to fail ({{ paradedb_verify_failure_case }})
   block:
-    - name: Prepare the managed databases ({{ postgres_verify_failure_case }})
+    - name: Prepare the managed databases ({{ paradedb_verify_failure_case }})
       ansible.builtin.include_role:
         name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
         tasks_from: util/prepare_managed_databases
       vars:
-        postgres_managed_databases_additional: "{{ postgres_verify_failure_managed_databases_additional }}"
+        paradedb_managed_databases_additional: "{{ paradedb_verify_failure_managed_databases_additional }}"
         # Failing to connect is retried, but retrying once is enough to see it given up on.
-        postgres_managed_databases_connection_retries: 1
-        postgres_managed_databases_connection_retry_delay_seconds: 1
+        paradedb_managed_databases_connection_retries: 1
+        paradedb_managed_databases_connection_retry_delay_seconds: 1
 
-    - name: Note that preparing the managed databases succeeded ({{ postgres_verify_failure_case }})
+    - name: Note that preparing the managed databases succeeded ({{ paradedb_verify_failure_case }})
       ansible.builtin.set_fact:
-        postgres_verify_failure_result: null
+        paradedb_verify_failure_result: null
   rescue:
-    - name: Note how preparing the managed databases failed ({{ postgres_verify_failure_case }})
+    - name: Note how preparing the managed databases failed ({{ paradedb_verify_failure_case }})
       ansible.builtin.set_fact:
-        postgres_verify_failure_result: "{{ ansible_failed_result }}"
+        paradedb_verify_failure_result: "{{ ansible_failed_result }}"
   always:
-    - name: Make Postgres accept connections again ({{ postgres_verify_failure_case }})
-      when: postgres_verify_failure_reject_connections | bool
+    - name: Make ParadeDB accept connections again ({{ paradedb_verify_failure_case }})
+      when: paradedb_verify_failure_reject_connections | bool
       ansible.builtin.command:
-        cmd: "{{ postgres_verify_accept_connections_command }}"
+        cmd: "{{ paradedb_verify_accept_connections_command }}"
       changed_when: true
 
-- name: Assert that preparing the managed databases failed as expected ({{ postgres_verify_failure_case }})
+- name: Assert that preparing the managed databases failed as expected ({{ paradedb_verify_failure_case }})
   ansible.builtin.assert:
     that:
-      - postgres_verify_failure_result is not none
-      - postgres_verify_failure_expected_output in (postgres_verify_failure_result.msg | default(''))
-      - postgres_verify_managed_dbs | map(attribute='password') | select('in', postgres_verify_failure_result | to_json) | list == []
+      - paradedb_verify_failure_result is not none
+      - paradedb_verify_failure_expected_output in (paradedb_verify_failure_result.msg | default(''))
+      - paradedb_verify_managed_dbs | map(attribute='password') | select('in', paradedb_verify_failure_result | to_json) | list == []
     fail_msg: >-
-      Preparing the managed databases ({{ postgres_verify_failure_case }})
-      {% if postgres_verify_failure_result is none %}
+      Preparing the managed databases ({{ paradedb_verify_failure_case }})
+      {% if paradedb_verify_failure_result is none %}
       succeeded, but it should have failed.
       {% else %}
-      did not fail as expected: the error should contain `{{ postgres_verify_failure_expected_output }}` but no passwords.
+      did not fail as expected: the error should contain `{{ paradedb_verify_failure_expected_output }}` but no passwords.
       Error:
-      {{ (postgres_verify_failure_result.msg | default('')) | regex_replace(postgres_verify_managed_dbs | map(attribute='password') | map('regex_escape') | join('|'), '<password>') }}
+      {{ (paradedb_verify_failure_result.msg | default('')) | regex_replace(paradedb_verify_managed_dbs | map(attribute='password') | map('regex_escape') | join('|'), '<password>') }}
       {% endif %}
     success_msg: >-
-      Preparing the managed databases ({{ postgres_verify_failure_case }}) failed, explaining why without leaking passwords:
-      {{ postgres_verify_failure_result.msg | default('') }}
+      Preparing the managed databases ({{ paradedb_verify_failure_case }}) failed, explaining why without leaking passwords:
+      {{ paradedb_verify_failure_result.msg | default('') }}

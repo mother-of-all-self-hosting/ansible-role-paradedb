@@ -47,7 +47,7 @@ Currently these testing scenarios are available:
 
 ### `default`
 
-Tests a standard Postgres installation with the latest Postgres version.
+Tests a standard ParadeDB installation with the latest ParadeDB version.
 
 ## Running
 

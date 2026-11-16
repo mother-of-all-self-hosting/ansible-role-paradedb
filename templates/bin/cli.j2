@@ -6,8 +6,8 @@ SPDX-FileCopyrightText: 2022-2026 Slavi Pantaleev
 SPDX-License-Identifier: AGPL-3.0-or-later
 #}
 
-# Runs psql inside the (running) Postgres container, connecting the same way the managed databases preparation does.
-# The credentials come from the env-postgres-psql file, which Docker reads itself, so that they do not appear on any command line.
+# Runs psql inside the (running) ParadeDB container, connecting the same way the managed databases preparation does.
+# The credentials come from the env-paradedb-psql file, which Docker reads itself, so that they do not appear on any command line.
 # A TTY is only requested when there is one, so that SQL can also be piped in (e.g. `echo 'SELECT 1' | cli`).
 docker_exec_args=(-i)
 if [ -t 0 ]; then
@@ -16,7 +16,7 @@ fi
 
 exec docker exec \
     "${docker_exec_args[@]}" \
-    --env-file={{ postgres_base_path }}/env-postgres-psql \
-    {{ postgres_identifier }} \
-    psql -h {{ postgres_run_path_in_container if postgres_cli_use_unix_socket_enabled else '127.0.0.1' }} \
+    --env-file={{ paradedb_base_path }}/env-paradedb-psql \
+    {{ paradedb_identifier }} \
+    psql -h {{ paradedb_run_path_in_container if paradedb_cli_use_unix_socket_enabled else '127.0.0.1' }} \
     "$@"

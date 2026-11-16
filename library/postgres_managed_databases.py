@@ -5,12 +5,12 @@
 
 DOCUMENTATION = r"""
 ---
-module: postgres_managed_databases
-short_description: Prepares managed Postgres databases (roles, passwords, databases, owners)
+module: paradedb_managed_databases
+short_description: Prepares managed ParadeDB databases (roles, passwords, databases, owners)
 description:
   - Inspects the server first and only runs the statements needed to bring each managed database
     (and its role) to the desired state, so that it can report whether anything changed.
-  - Talks to Postgres by running C(psql) (via O(psql_command)) and feeding it SQL on stdin,
+  - Talks to ParadeDB by running C(psql) (via O(psql_command)) and feeding it SQL on stdin,
     so that passwords never end up in files or on command lines.
   - Passwords are compared against the stored SCRAM-SHA-256 or MD5 verifiers, and new ones are sent
     as such verifiers (like psql's C(\password) does), so that they do not show up in server logs.
@@ -53,7 +53,7 @@ options:
     type: str
     required: true
   connection_retries:
-    description: How many times to retry when C(psql) cannot connect to Postgres (exit code 2).
+    description: How many times to retry when C(psql) cannot connect to ParadeDB (exit code 2).
     type: int
     default: 0
   connection_retry_delay_seconds:
@@ -89,7 +89,7 @@ from ansible.module_utils.basic import AnsibleModule
 
 PSQL_EXIT_CODES = {
     1: "fatal psql error",
-    2: "could not connect to Postgres, or the connection was lost",
+    2: "could not connect to ParadeDB, or the connection was lost",
     3: "an SQL statement failed",
 }
 
@@ -107,12 +107,12 @@ def quote_literal(value):
 
 
 def saslprep(password):
-    """Prepares a password the way Postgres does (see `pg_saslprep()`) before SCRAM-hashing it.
+    """Prepares a password the way ParadeDB does (see `pg_saslprep()`) before SCRAM-hashing it.
 
-    Returns `None` when Postgres would fall back to the raw password (prohibited input).
+    Returns `None` when ParadeDB would fall back to the raw password (prohibited input).
     """
     if all(ord(c) < 128 for c in password):
-        # Postgres passes pure-ASCII input through unchanged (control characters included).
+        # ParadeDB passes pure-ASCII input through unchanged (control characters included).
         return password.encode("utf-8")
 
     mapped = "".join(
@@ -195,16 +195,16 @@ def password_matches(stored, password, username):
     if len(stored) == 35 and stored.startswith("md5"):
         return hmac.compare_digest(stored, md5_verifier(password, username))
 
-    # Postgres < 10 may store passwords in plain text.
+    # ParadeDB < 10 may store passwords in plain text.
     return hmac.compare_digest(stored.encode("utf-8"), password.encode("utf-8"))
 
 
 def password_to_send(module, server, password, username):
-    """Returns the password (preferably as a verifier, so the plain one never reaches Postgres) for `ALTER ROLE`."""
+    """Returns the password (preferably as a verifier, so the plain one never reaches ParadeDB) for `ALTER ROLE`."""
     method = server["password_encryption"]
     verifier = None
     if method == "scram-sha-256" and all(ord(c) < 128 for c in password):
-        # Non-ASCII passwords are left to Postgres, so that any difference in our SASLprep
+        # Non-ASCII passwords are left to ParadeDB, so that any difference in our SASLprep
         # implementation cannot make a role unable to log in (it would only make the comparison
         # above fail and the password be set again).
         verifier = scram_verifier(password, server["scram_iterations"])

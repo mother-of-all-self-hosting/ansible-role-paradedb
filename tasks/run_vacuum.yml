@@ -7,132 +7,132 @@
 
 # Defaults
 
-# No waiting is needed with the readiness check (see `postgres_managed_databases_postgres_start_wait_timeout_seconds`).
-- name: Set postgres_start_wait_time, if not provided
+# No waiting is needed with the readiness check (see `paradedb_managed_databases_paradedb_start_wait_timeout_seconds`).
+- name: Set paradedb_start_wait_time, if not provided
   ansible.builtin.set_fact:
-    postgres_start_wait_time: "{{ 0 if postgres_systemd_readiness_check_enabled | bool else 15 }}"
-  when: "postgres_start_wait_time | default('') == ''"
+    paradedb_start_wait_time: "{{ 0 if paradedb_systemd_readiness_check_enabled | bool else 15 }}"
+  when: "paradedb_start_wait_time | default('') == ''"
 
-- name: Set postgres_vacuum_wait_time, if not provided
+- name: Set paradedb_vacuum_wait_time, if not provided
   ansible.builtin.set_fact:
-    postgres_vacuum_wait_time: "{{ 7 * 86400 }}"
-  when: "postgres_vacuum_wait_time | default('') == ''"
+    paradedb_vacuum_wait_time: "{{ 7 * 86400 }}"
+  when: "paradedb_vacuum_wait_time | default('') == ''"
 
-- name: Set postgres_vacuum_databases_list, if not provided
+- name: Set paradedb_vacuum_databases_list, if not provided
   ansible.builtin.set_fact:
-    postgres_vacuum_databases_list: "{{ postgres_vacuum_default_databases_list }}"
-  when: "postgres_vacuum_databases_list | default([]) | length == 0"
+    paradedb_vacuum_databases_list: "{{ paradedb_vacuum_default_databases_list }}"
+  when: "paradedb_vacuum_databases_list | default([]) | length == 0"
 
-- name: Set postgres_vacuum_preset, if not provided
+- name: Set paradedb_vacuum_preset, if not provided
   ansible.builtin.set_fact:
-    postgres_vacuum_preset: vacuum-complete
-  when: "postgres_vacuum_preset | default('') == ''"
+    paradedb_vacuum_preset: vacuum-complete
+  when: "paradedb_vacuum_preset | default('') == ''"
 
-- name: Exit if postgres_vacuum_preset is unrecognized
+- name: Exit if paradedb_vacuum_preset is unrecognized
   ansible.builtin.fail:
-    msg: "Urecognized preset: {{ postgres_vacuum_preset }}"
-  when: "postgres_vacuum_preset not in postgres_vacuum_presets.keys()"
+    msg: "Urecognized preset: {{ paradedb_vacuum_preset }}"
+  when: "paradedb_vacuum_preset not in paradedb_vacuum_presets.keys()"
 
-- name: Set postgres_vacuum_stops_services, if not provided
+- name: Set paradedb_vacuum_stops_services, if not provided
   ansible.builtin.set_fact:
-    postgres_vacuum_stops_services: "{{ postgres_vacuum_presets[postgres_vacuum_preset].stopsServices }}"
-  when: "postgres_vacuum_stops_services | default('') == ''"
+    paradedb_vacuum_stops_services: "{{ paradedb_vacuum_presets[paradedb_vacuum_preset].stopsServices }}"
+  when: "paradedb_vacuum_stops_services | default('') == ''"
 
-- name: Set postgres_vacuum_query, if not provided
+- name: Set paradedb_vacuum_query, if not provided
   ansible.builtin.set_fact:
-    postgres_vacuum_query: "{{ postgres_vacuum_presets[postgres_vacuum_preset].query }}"
-  when: "postgres_vacuum_query | default('') == ''"
+    paradedb_vacuum_query: "{{ paradedb_vacuum_presets[paradedb_vacuum_preset].query }}"
+  when: "paradedb_vacuum_query | default('') == ''"
 
 # Actual vacuuming work
 
-- name: Ensure Postgres service is started
+- name: Ensure ParadeDB service is started
   ansible.builtin.service:
-    name: "{{ postgres_identifier }}"
+    name: "{{ paradedb_identifier }}"
     state: started
     daemon_reload: true
-  register: postgres_ensure_started_result
+  register: paradedb_ensure_started_result
 
-- name: Wait a bit, so that Postgres can start
-  when: "postgres_ensure_started_result.changed | bool and (postgres_start_wait_time | int) > 0"
+- name: Wait a bit, so that ParadeDB can start
+  when: "paradedb_ensure_started_result.changed | bool and (paradedb_start_wait_time | int) > 0"
   ansible.builtin.wait_for:
-    timeout: "{{ postgres_start_wait_time }}"
+    timeout: "{{ paradedb_start_wait_time }}"
   delegate_to: 127.0.0.1
   become: false
 
-- name: Detect existing Postgres version
-  ansible.builtin.import_tasks: tasks/detect_existing_postgres_version.yml
+- name: Detect existing ParadeDB version
+  ansible.builtin.import_tasks: tasks/detect_existing_paradedb_version.yml
 
-- name: Abort, if no existing Postgres version detected
+- name: Abort, if no existing ParadeDB version detected
   ansible.builtin.fail:
-    msg: "Could not find existing Postgres installation"
-  when: "not postgres_detected_existing | bool"
+    msg: "Could not find existing ParadeDB installation"
+  when: "not paradedb_detected_existing | bool"
 
-- name: Ensure services are stopped before Postgres vacuuming, if necessary
-  when: postgres_vacuum_stops_services | bool
+- name: Ensure services are stopped before ParadeDB vacuuming, if necessary
+  when: paradedb_vacuum_stops_services | bool
   ansible.builtin.service:
     name: "{{ item }}"
     state: stopped
     daemon_reload: true
-  with_items: "{{ postgres_systemd_services_to_stop_for_maintenance_list }}"
+  with_items: "{{ paradedb_systemd_services_to_stop_for_maintenance_list }}"
 
-# If Postgres is up from before, but it had originally been installed on a different container network,
-# trying to vacuum databases by connecting to `postgres_container_network` would fail.
+# If ParadeDB is up from before, but it had originally been installed on a different container network,
+# trying to vacuum databases by connecting to `paradedb_container_network` would fail.
 # For this reason, we determine and use the currently used network.
 # Restarting the service later would put it in the current network.
-- name: Check Postgres container network
-  ansible.builtin.command: "{{ devture_systemd_docker_base_host_command_docker }} container inspect {{ postgres_identifier }} --format '{% raw %}{{.HostConfig.NetworkMode}}{% endraw %}'"
-  register: postgres_container_network_check_result
+- name: Check ParadeDB container network
+  ansible.builtin.command: "{{ devture_systemd_docker_base_host_command_docker }} container inspect {{ paradedb_identifier }} --format '{% raw %}{{.HostConfig.NetworkMode}}{% endraw %}'"
+  register: paradedb_container_network_check_result
   changed_when: false
 
-- name: Set Postgres container network to use for vacuuming databases
+- name: Set ParadeDB container network to use for vacuuming databases
   ansible.builtin.set_fact:
-    postgres_container_network_for_vacuuming: "{{ postgres_container_network_check_result.stdout }}"
+    paradedb_container_network_for_vacuuming: "{{ paradedb_container_network_check_result.stdout }}"
 
-- name: Generate Postgres database vacuum command
+- name: Generate ParadeDB database vacuum command
   ansible.builtin.set_fact:
-    postgres_vacuum_run_command: >-
+    paradedb_vacuum_run_command: >-
       {{ devture_systemd_docker_base_host_command_docker }} run
       --rm
-      --name={{ postgres_identifier }}-vacuum
-      --user={{ postgres_container_uid }}:{{ postgres_container_gid }}
+      --name={{ paradedb_identifier }}-vacuum
+      --user={{ paradedb_container_uid }}:{{ paradedb_container_gid }}
       --cap-drop=ALL
-      --network={{ postgres_container_network_for_vacuuming }}
-      --env-file={{ postgres_base_path }}/env-postgres-psql
-      {{ postgres_detected_version_corresponding_container_image }}
-      /bin/sh -c 'for db in {{ postgres_vacuum_databases_list | join(" ") }}; do echo "VACUUM start: $db"; if ! psql -v ON_ERROR_STOP=1 -h {{ postgres_identifier }} "$db" -c "{{ postgres_vacuum_query }}"; then echo "VACUUM failed: $db"; exit 1; fi; echo "VACUUM done: $db"; done; echo "VACUUM completed for all databases"'
+      --network={{ paradedb_container_network_for_vacuuming }}
+      --env-file={{ paradedb_base_path }}/env-paradedb-psql
+      {{ paradedb_detected_version_corresponding_container_image }}
+      /bin/sh -c 'for db in {{ paradedb_vacuum_databases_list | join(" ") }}; do echo "VACUUM start: $db"; if ! psql -v ON_ERROR_STOP=1 -h {{ paradedb_identifier }} "$db" -c "{{ paradedb_vacuum_query }}"; then echo "VACUUM failed: $db"; exit 1; fi; echo "VACUUM done: $db"; done; echo "VACUUM completed for all databases"'
 
-- name: Note about Postgres vacuum alternative
+- name: Note about ParadeDB vacuum alternative
   ansible.builtin.debug:
     msg: >-
-      Running vacuum against the databases `{{ postgres_vacuum_databases_list | join(", ") }}` with the following Postgres command:
-      `{{ postgres_vacuum_run_command }}`.
+      Running vacuum against the databases `{{ paradedb_vacuum_databases_list | join(", ") }}` with the following ParadeDB command:
+      `{{ paradedb_vacuum_run_command }}`.
       If this crashes, you can stop all processes which may use the database (`systemctl stop example.service another.service`),
-      start Postgres only (`systemctl start {{ postgres_identifier }}`)
+      start ParadeDB only (`systemctl start {{ paradedb_identifier }}`)
       and manually run the above command directly on the server.
 
-- name: Run Postgres vacuum command
+- name: Run ParadeDB vacuum command
   ansible.builtin.command:
-    cmd: "{{ postgres_vacuum_run_command }}"
-  async: "{{ postgres_vacuum_wait_time }}"
-  poll: "{{ postgres_vacuum_poll_interval }}"
-  register: postgres_vacuum_result
-  failed_when: not postgres_vacuum_result.finished or postgres_vacuum_result.rc != 0
-  changed_when: postgres_vacuum_result.finished and postgres_vacuum_result.rc == 0
+    cmd: "{{ paradedb_vacuum_run_command }}"
+  async: "{{ paradedb_vacuum_wait_time }}"
+  poll: "{{ paradedb_vacuum_poll_interval }}"
+  register: paradedb_vacuum_result
+  failed_when: not paradedb_vacuum_result.finished or paradedb_vacuum_result.rc != 0
+  changed_when: paradedb_vacuum_result.finished and paradedb_vacuum_result.rc == 0
 
 # Intentionally show the results
 - ansible.builtin.debug:
-    var: "postgres_vacuum_result"
+    var: "paradedb_vacuum_result"
 
-- name: Ensure Postgres is stopped (if it previously was)
-  when: postgres_ensure_started_result.changed | bool
+- name: Ensure ParadeDB is stopped (if it previously was)
+  when: paradedb_ensure_started_result.changed | bool
   ansible.builtin.service:
-    name: "{{ postgres_identifier }}"
+    name: "{{ paradedb_identifier }}"
     state: stopped
 
-- name: Ensure services are started back up after Postgres vacuuming, if necessary
-  when: postgres_vacuum_stops_services | bool
+- name: Ensure services are started back up after ParadeDB vacuuming, if necessary
+  when: paradedb_vacuum_stops_services | bool
   ansible.builtin.service:
     name: "{{ item }}"
     state: started
     daemon_reload: true
-  with_items: "{{ postgres_systemd_services_to_stop_for_maintenance_list }}"
+  with_items: "{{ paradedb_systemd_services_to_stop_for_maintenance_list }}"

@@ -6,13 +6,13 @@
   "separateMajorMinor": true,
   "packageRules": [
     {
-      "description": "A new Postgres major becomes a new variable, never a bump of an old one; Postgres has no patch releases in its versioning",
-      "matchPackageNames": ["/postgres/"],
+      "description": "A new ParadeDB major becomes a new variable, never a bump of an old one; ParadeDB has no patch releases in its versioning",
+      "matchPackageNames": ["/paradedb/"],
       "matchUpdateTypes": ["major", "patch"],
       "enabled": false
     },
     {
-      "description": "Postgres minor releases (17.11 -> 17.12) are upstream bugfix-only: automerge via branch push once Molecule is green",
+      "description": "ParadeDB minor releases (17.11 -> 17.12) are upstream bugfix-only: automerge via branch push once Molecule is green",
       "matchManagers": ["custom.regex"],
       "matchUpdateTypes": ["minor"],
       "automerge": true,
@@ -26,9 +26,9 @@
         "/defaults/main.yml$/"
       ],
       "matchStrings": [
-        "(?<name>postgres_container_image_v\\d+_version):\\s*\"(?<currentValue>[^\"]+)\""
+        "(?<name>paradedb_container_image_v\\d+_version):\\s*\"(?<currentValue>[^\"]+)\""
       ],
-      "depNameTemplate": "postgres",
+      "depNameTemplate": "paradedb",
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver-coerced"
     }

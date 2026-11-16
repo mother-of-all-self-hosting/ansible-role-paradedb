@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   stale:
-    if: github.repository == 'mother-of-all-self-hosting/ansible-role-postgres'
+    if: github.repository == 'mother-of-all-self-hosting/ansible-role-paradedb'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/stale@v10.3.0

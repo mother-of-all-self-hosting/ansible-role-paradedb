@@ -12,7 +12,7 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: postgres-${MOLECULE_DISTRO:-ubuntu2604}-default
+  - name: paradedb-${MOLECULE_DISTRO:-ubuntu2604}-default
     image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2604}-ansible:latest"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
@@ -36,18 +36,18 @@ provisioner:
     group_vars:
       all:
         # Helper variables
-        postgres_debug_service_enabled: false
-        postgres_restarts_check_enabled: true
+        paradedb_debug_service_enabled: false
+        paradedb_restarts_check_enabled: true
 
-        # Variables for Postgres
-        postgres_uid: 1000
-        postgres_gid: 1000
-        postgres_connection_password: password
+        # Variables for ParadeDB
+        paradedb_uid: 1000
+        paradedb_gid: 1000
+        paradedb_connection_password: password
 
         # Managed databases (see verify_managed_databases.yml):
         # - one with extra SQL which only a superuser may run, in that database rather than the default one
         # - one with a password containing characters which need escaping in SQL
-        postgres_managed_databases_additional:
+        paradedb_managed_databases_additional:
           - name: molecule_managed_db
             username: molecule_managed_user
             password: molecule-managed-password

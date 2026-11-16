@@ -3,25 +3,25 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Ensure Postgres service is started
+- name: Ensure ParadeDB service is started
   ansible.builtin.service:
-    name: "{{ postgres_identifier }}"
+    name: "{{ paradedb_identifier }}"
     state: started
     daemon_reload: true
-  register: postgres_ensure_started_result
+  register: paradedb_ensure_started_result
 
-- name: Wait a bit, so that Postgres can start
-  when: "postgres_ensure_started_result.changed | bool and (postgres_managed_databases_postgres_start_wait_timeout_seconds | int) > 0"
+- name: Wait a bit, so that ParadeDB can start
+  when: "paradedb_ensure_started_result.changed | bool and (paradedb_managed_databases_paradedb_start_wait_timeout_seconds | int) > 0"
   ansible.builtin.wait_for:
-    timeout: "{{ postgres_managed_databases_postgres_start_wait_timeout_seconds }}"
+    timeout: "{{ paradedb_managed_databases_paradedb_start_wait_timeout_seconds }}"
   delegate_to: 127.0.0.1
   become: false
 
 - name: Detect managed databases with invalid fields
   ansible.builtin.set_fact:
-    postgres_managed_databases_with_missing_keys: >-
+    paradedb_managed_databases_with_missing_keys: >-
       {%- set result = [] -%}
-      {%- for db in postgres_managed_databases -%}
+      {%- for db in paradedb_managed_databases -%}
         {%- set missing = ['name', 'username', 'password'] | difference(db.keys() | list) -%}
         {%- if missing | length > 0 -%}
           {%- set _ = result.append({'name': db.name | default('<unknown>'), 'missing': missing}) -%}
@@ -34,25 +34,25 @@
   ansible.builtin.fail:
     msg: >-
       The following managed database definitions lack required keys:
-      {% for db in postgres_managed_databases_with_missing_keys %}
+      {% for db in paradedb_managed_databases_with_missing_keys %}
       {{ db.name }} (missing: {{ db.missing | join(', ') }}){% if not loop.last %}, {% endif %}
       {% endfor %}
-  when: postgres_managed_databases_with_missing_keys | length > 0
+  when: paradedb_managed_databases_with_missing_keys | length > 0
 
 # Only the statements needed are run (see the module), so that this only reports a change when something did change.
 # SQL is passed to psql on stdin, so that passwords do not end up in files or on command lines.
 - name: Ensure managed databases are prepared
-  when: postgres_managed_databases | length > 0
-  postgres_managed_databases:
-    # psql runs inside the (already started) Postgres container and connects the same way its readiness check does.
+  when: paradedb_managed_databases | length > 0
+  paradedb_managed_databases:
+    # psql runs inside the (already started) ParadeDB container and connects the same way its readiness check does.
     psql_command: >-
       {{
         devture_systemd_docker_base_host_command_docker.split()
         + [
           'exec',
           '-i',
-          '--env-file=' ~ postgres_base_path ~ '/env-postgres-psql',
-          postgres_identifier,
+          '--env-file=' ~ paradedb_base_path ~ '/env-paradedb-psql',
+          paradedb_identifier,
           'psql',
           '--host=127.0.0.1',
           '--port=5432',
@@ -61,7 +61,7 @@
     # Only the keys the module knows about are passed (definitions may contain others).
     databases: |-
       {%- set result = [] -%}
-      {%- for db in postgres_managed_databases -%}
+      {%- for db in paradedb_managed_databases -%}
         {%- set _ = result.append({
           'name': db.name,
           'username': db.username,
@@ -70,15 +70,15 @@
         }) -%}
       {%- endfor -%}
       {{ result }}
-    lc_ctype: "{{ postgres_default_lc_type }}"
-    lc_collate: "{{ postgres_default_lc_collate }}"
-    connection_retries: "{{ postgres_managed_databases_connection_retries }}"
-    connection_retry_delay_seconds: "{{ postgres_managed_databases_connection_retry_delay_seconds }}"
+    lc_ctype: "{{ paradedb_default_lc_type }}"
+    lc_collate: "{{ paradedb_default_lc_collate }}"
+    connection_retries: "{{ paradedb_managed_databases_connection_retries }}"
+    connection_retry_delay_seconds: "{{ paradedb_managed_databases_connection_retry_delay_seconds }}"
     redact_values:
-      - "{{ postgres_connection_password }}"
+      - "{{ paradedb_connection_password }}"
 
-- name: Ensure Postgres is stopped, if it originally was and if we are configured to do it
-  when: postgres_systemd_service_stop_originally_stopped_after_preparation | bool and postgres_ensure_started_result.changed | bool
+- name: Ensure ParadeDB is stopped, if it originally was and if we are configured to do it
+  when: paradedb_systemd_service_stop_originally_stopped_after_preparation | bool and paradedb_ensure_started_result.changed | bool
   ansible.builtin.service:
-    name: "{{ postgres_identifier }}"
+    name: "{{ paradedb_identifier }}"
     state: stopped

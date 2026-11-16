@@ -8,10 +8,10 @@
 #
 # Usage: bin/compute-next-tag.sh
 #
-# This role tracks one Postgres version per supported major
-# (`postgres_container_image_v15_version`, `postgres_container_image_v16_version`, ...).
+# This role tracks one ParadeDB version per supported major
+# (`paradedb_container_image_v15_version`, `paradedb_container_image_v16_version`, ...).
 # Only the newest tracked major defines the tag, which looks like
-# `v<newest Postgres version>-<release>`:
+# `v<newest ParadeDB version>-<release>`:
 #
 # - if defaults/main.yml points at a newest version that has never been
 #   released, the release counter restarts at 0 (`v18.6-0`)
@@ -46,13 +46,13 @@ role_defining_paths=(
 	'vars'
 )
 
-# The value of the highest-numbered postgres_container_image_v<N>_version.
-version="$(grep -E '^postgres_container_image_v[0-9]+_version:' "$defaults_path" \
-	| sed -E 's|^postgres_container_image_v([0-9]+)_version:[[:space:]]*"?([^"[:space:]]+)"?.*$|\1 \2|' \
+# The value of the highest-numbered paradedb_container_image_v<N>_version.
+version="$(grep -E '^paradedb_container_image_v[0-9]+_version:' "$defaults_path" \
+	| sed -E 's|^paradedb_container_image_v([0-9]+)_version:[[:space:]]*"?([^"[:space:]]+)"?.*$|\1 \2|' \
 	| sort -k1,1n | tail -n1 | cut -d' ' -f2)"
 
 if [ -z "$version" ]; then
-	echo >&2 "Could not determine the newest Postgres version from $defaults_path"
+	echo >&2 "Could not determine the newest ParadeDB version from $defaults_path"
 	exit 1
 fi
 

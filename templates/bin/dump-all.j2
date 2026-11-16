@@ -23,17 +23,17 @@ umask 077
 
 dump_path="$directory_path/latest-dump.sql.zst"
 
-# Runs pg_dumpall inside the (running) Postgres container, connecting the same way the managed databases preparation does,
-# and streams the compressed dump out. The credentials come from the env-postgres-psql file, which Docker reads itself,
+# Runs pg_dumpall inside the (running) ParadeDB container, connecting the same way the managed databases preparation does,
+# and streams the compressed dump out. The credentials come from the env-paradedb-psql file, which Docker reads itself,
 # so that they do not appear on any command line.
 #
 # The dump goes to a temporary file first, so that a failed dump neither leaves a truncated dump behind
 # (which could be mistaken for a good one) nor destroys the previous dump.
 docker exec \
-    --env-file={{ postgres_base_path }}/env-postgres-psql \
-    {{ postgres_identifier }} \
-    {{ postgres_container_shell_path }} -c \
-    'set -o pipefail && pg_dumpall -h {{ postgres_run_path_in_container if postgres_cli_use_unix_socket_enabled else '127.0.0.1' }} | zstd --stdout' \
+    --env-file={{ paradedb_base_path }}/env-paradedb-psql \
+    {{ paradedb_identifier }} \
+    {{ paradedb_container_shell_path }} -c \
+    'set -o pipefail && pg_dumpall -h {{ paradedb_run_path_in_container if paradedb_cli_use_unix_socket_enabled else '127.0.0.1' }} | zstd --stdout' \
     > "$dump_path.partial"
 status=$?
 

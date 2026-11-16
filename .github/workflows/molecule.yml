@@ -55,24 +55,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7.0.0
         with:
-          path: postgres
+          path: paradedb
 
       - name: Set up Python
         uses: actions/setup-python@v6.3.0
         with:
-          python-version-file: postgres/.python-version
+          python-version-file: paradedb/.python-version
           cache: pip
-          cache-dependency-path: postgres/molecule/requirements.txt
+          cache-dependency-path: paradedb/molecule/requirements.txt
 
       - name: Install Python dependencies
-        working-directory: postgres
+        working-directory: paradedb
         run: pip install -r molecule/requirements.txt
 
       - name: Cache Ansible collections
         uses: actions/cache@v6.1.0
         with:
           path: ~/.ansible/collections
-          key: ansible-collections-${{ hashFiles('postgres/molecule/*/requirements.yml') }}
+          key: ansible-collections-${{ hashFiles('paradedb/molecule/*/requirements.yml') }}
 
       # The runner ships AppArmor profiles for individual programs (wg-quick, mosquitto, ...),
       # which attach by path.
@@ -84,5 +84,5 @@ jobs:
         run: sudo aa-teardown
 
       - name: Run Molecule
-        working-directory: postgres
+        working-directory: paradedb
         run: molecule test --scenario-name ${{ matrix.scenario }}
