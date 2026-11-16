@@ -21,11 +21,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Setting up ParadeDB
 
-This is an [Ansible](https://www.ansible.com/) role which installs [PostgreSQL](https://www.postgresql.org) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
+This is an [Ansible](https://www.ansible.com/) role which installs [ParadeDB](https://www.paradedb.com) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
 
-PostgreSQL is a powerful, open-source object-relational database system with over 35 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance.
+ParadeDB is a [PostgreSQL](https://www.postgresql.org) extension with a custom index for full-text and vector search, BM25 scoring, filters, facets, aggregations, and joins.
 
-See the project's [documentation](https://www.postgresql.org/docs/) to learn what PostgreSQL does and why it might be useful to you.
+See the project's [documentation](https://www.paradedb.com/docs/reference/overview) to learn what ParadeDB does and why it might be useful to you.
 
 ## Adjusting the playbook configuration
 
@@ -79,7 +79,7 @@ After running the command for installation, the ParadeDB instance becomes availa
 > [!WARNING]
 > **Modifying the database directly (especially as services are running) is dangerous and may lead to irreversible database corruption.** When in doubt, consider [making a backup](#backing-up-a-database). You might also want to use a web user interface software like [Adminer](https://www.adminer.org/) and [pgAdmin](https://www.pgadmin.org/).
 
-You can use the CLI installed to the directory specified with `paradedb_bin_path` (default: `/paradedb/bin/`) for getting interactive terminal access ([psql](https://www.postgresql.org/docs/current/app-psql.html)) to the PostgreSQL server.
+You can use the CLI installed to the directory specified with `paradedb_bin_path` (default: `/paradedb/bin/`) for getting interactive terminal access ([psql](https://www.postgresql.org/docs/current/app-psql.html)) to the ParadeDB server.
 
 By default, this tool puts you in the `main` database, which contains nothing.
 
@@ -119,7 +119,7 @@ ansible-playbook -i inventory/hosts setup.yml --tags=import-paradedb \
 
 - `SERVER_PATH_TO_POSTGRES_DUMP_FILE` must be a file path to a ParadeDB dump file on the server (not on your local machine!)
 - `paradedb_default_import_database` defaults to `main`, which is useful for importing multiple databases (for dumps made with `pg_dumpall`). If you're importing a single database (e.g. `miniflux`), consider changing `paradedb_default_import_database` to the name of the database (e.g. `miniflux`)
-- after importing a large database, it's a good idea to run [an `ANALYZE` operation](https://www.postgresql.org/docs/current/sql-analyze.html) to make ParadeDB rebuild its database statistics and optimize its query planner. You can easily do this via the playbook by running `ansible-playbook -i inventory/hosts setup.yml --tags=run-paradedb-vacuum -e paradedb_vacuum_preset=analyze` (refer to [Vacuuming PostgreSQL](#vacuuming-postgresql) for more details).
+- after importing a large database, it's a good idea to run [an `ANALYZE` operation](https://www.postgresql.org/docs/current/sql-analyze.html) to make ParadeDB rebuild its database statistics and optimize its query planner. You can easily do this via the playbook by running `ansible-playbook -i inventory/hosts setup.yml --tags=run-paradedb-vacuum -e paradedb_vacuum_preset=analyze` (refer to [Vacuuming ParadeDB](#vacuuming-paradedb) for more details).
 
 ### Example playbook
 
@@ -175,12 +175,12 @@ paradedb_managed_databases: |
 
 Table of contents:
 
-- [Vacuuming PostgreSQL](#vacuuming-postgresql), for when you wish to run a ParadeDB [VACUUM](https://www.postgresql.org/docs/current/sql-vacuum.html) (optimizing disk space)
-- [Backing up PostgreSQL](#backing-up-a-database), for when you wish to make a backup
-- [Upgrading PostgreSQL](#upgrading-postgresql), for upgrading to new major versions of PostgreSQL. Such **manual upgrades are sometimes required**.
-- [Tuning PostgreSQL](#tuning-postgresql) to make it run faster
+- [Vacuuming ParadeDB](#vacuuming-paradedb), for when you wish to run a ParadeDB [VACUUM](https://www.postgresql.org/docs/current/sql-vacuum.html) (optimizing disk space)
+- [Backing up ParadeDB](#backing-up-a-database), for when you wish to make a backup
+- [Upgrading ParadeDB](#upgrading-paradedb), for upgrading to new major versions of ParadeDB. Such **manual upgrades are sometimes required**.
+- [Tuning ParadeDB](#tuning-paradedb) to make it run faster
 
-### Vacuuming PostgreSQL
+### Vacuuming ParadeDB
 
 Deleting lots data from ParadeDB does not make it release disk space, until you perform a [`VACUUM` operation](https://www.postgresql.org/docs/current/sql-vacuum.html).
 
@@ -208,7 +208,7 @@ ansible-playbook -i inventory/hosts setup.yml --tags=run-paradedb-vacuum -e para
 
 The script to dump the database (`dump-all`) is installed to the directory specified with `paradedb_bin_path`. It can dump the database to a path of your choosing.
 
-To make a one-off back up of the current PostgreSQL database, make sure it's running and then execute a command like this on the server (adjust the path to the binary, etc. to how you/your playbook specifies them, e.g. `mash-paradedb`):
+To make a one-off back up of the current ParadeDB database, make sure it's running and then execute a command like this on the server (adjust the path to the binary, etc. to how you/your playbook specifies them, e.g. `mash-paradedb`):
 
 ```sh
 /usr/bin/docker exec \
@@ -224,7 +224,7 @@ Restoring a backup made this way can be done by [importing it](#importing-databa
 >[!NOTE]
 > To automatically make ParadeDB database backups on a fixed schedule, consider enabling dedicated services such as [docker-paradedb-backup-local](https://github.com/prodrigestivill/docker-paradedb-backup-local).
 
-### Upgrading PostgreSQL
+### Upgrading ParadeDB
 
 This role is configured to stick to the major and minor version your existing ParadeDB installation is on until you manually upgrade it, as newer ParadeDB versions cannot start with data generated by older ParadeDB versions.
 
@@ -252,9 +252,9 @@ As part of the upgrade, the database is dumped to `/tmp`, an upgraded and empty 
 
 To save disk space in `/tmp`, the dump file is gzipped on the fly at the expense of CPU usage. If you have plenty of space in `/tmp` and would rather avoid gzipping, you can explicitly pass a dump filename which doesn't end in `.gz`. Example: `--extra-vars="paradedb_dump_name=paradedb-dump.sql"`
 
-### Tuning PostgreSQL
+### Tuning ParadeDB
 
-PostgreSQL can be [tuned](https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server) to make it run faster. This is done by passing extra arguments to the ParadeDB process.
+ParadeDB can be [tuned](https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server) to make it run faster. This is done by passing extra arguments to the ParadeDB process.
 
 This role **already does some tuning by default**, which matches the [tuning logic](https://github.com/le0pard/pgtune/blob/master/src/features/configuration/configurationSlice.js) done by websites like <https://pgtune.leopard.in.ua/>. You can manually influence some of the tuning variables. These parameters (variables) are injected via the `paradedb_paradedb_process_extra_arguments_auto` variable.
 
