@@ -1,0 +1,6 @@
+.ansible
+
+/var/
+
+molecule/venv
+__pycache__/

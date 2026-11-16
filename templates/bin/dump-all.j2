@@ -1,0 +1,46 @@
+#!/bin/bash
+{#
+SPDX-FileCopyrightText: 2022-2026 Slavi Pantaleev
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+#}
+
+if [ $# -ne 1 ]; then
+    echo "Usage: "$0" <directory_path>"
+    echo "A latest-dump.sql.zst file will be dumped to the specified directory"
+    exit 1
+fi
+
+directory_path=$1
+
+if [ ! -d "$directory_path" ]; then
+    echo "$directory_path does not exist."
+    exit 1
+fi
+
+# The dump holds every database (including password hashes), so only the caller may read it.
+umask 077
+
+dump_path="$directory_path/latest-dump.sql.zst"
+
+# Runs pg_dumpall inside the (running) Postgres container, connecting the same way the managed databases preparation does,
+# and streams the compressed dump out. The credentials come from the env-postgres-psql file, which Docker reads itself,
+# so that they do not appear on any command line.
+#
+# The dump goes to a temporary file first, so that a failed dump neither leaves a truncated dump behind
+# (which could be mistaken for a good one) nor destroys the previous dump.
+docker exec \
+    --env-file={{ postgres_base_path }}/env-postgres-psql \
+    {{ postgres_identifier }} \
+    {{ postgres_container_shell_path }} -c \
+    'set -o pipefail && pg_dumpall -h {{ postgres_run_path_in_container if postgres_cli_use_unix_socket_enabled else '127.0.0.1' }} | zstd --stdout' \
+    > "$dump_path.partial"
+status=$?
+
+if [ $status -ne 0 ]; then
+    rm -f "$dump_path.partial"
+    echo "Dumping failed (exit code $status)." >&2
+    exit $status
+fi
+
+mv "$dump_path.partial" "$dump_path"
