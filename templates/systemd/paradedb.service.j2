@@ -1,5 +1,6 @@
 {#
-SPDX-FileCopyrightText: 2022 - 2025 Slavi Pantaleev
+SPDX-FileCopyrightText: 2022-2025 Slavi Pantaleev
+SPDX-FileCopyrightText: 2026 Suguru Hirahara
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 #}
@@ -53,7 +54,7 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       {{ arg }} \
       {% endfor %}
       {{ paradedb_container_image_to_use }} \
-      paradedb {{ paradedb_process_extra_arguments | join(' ') }}
+      postgres {{ paradedb_process_extra_arguments | join(' ') }}
 
 {% for network in paradedb_container_additional_networks %}
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ paradedb_identifier }}
