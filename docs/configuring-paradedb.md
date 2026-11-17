@@ -213,8 +213,8 @@ To make a one-off back up of the current ParadeDB database, make sure it's runni
 ```sh
 /usr/bin/docker exec \
 --env-file=/paradedb/env-paradedb-psql \
-paradedb \
-/usr/local/bin/pg_dumpall -h paradedb \
+postgres \
+/usr/local/bin/pg_dumpall -h postgres \
 | gzip -c \
 > /paradedb.sql.gz
 ```
