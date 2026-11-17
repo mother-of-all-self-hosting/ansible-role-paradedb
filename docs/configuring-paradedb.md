@@ -27,6 +27,9 @@ ParadeDB is a [PostgreSQL](https://www.postgresql.org) extension with a custom i
 
 See the project's [documentation](https://www.paradedb.com/docs/reference/overview) to learn what ParadeDB does and why it might be useful to you.
 
+>[!NOTE]
+> This role installs its own PostgreSQL server with ParadeDB's extension built in. It does not add the extension to an existing Postgres instance.
+
 ## Adjusting the playbook configuration
 
 To enable ParadeDB with this role, add the following configuration to your `vars.yml` file.
