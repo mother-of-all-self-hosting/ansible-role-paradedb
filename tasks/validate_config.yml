@@ -9,10 +9,8 @@
       You need to define a required configuration setting (`{{ item }}`).
   when: "lookup('vars', item, default='') | string | length == 0"
   with_items:
-    - paradedb_identifier
     - paradedb_uid
     - paradedb_gid
-    - paradedb_container_network
     - paradedb_connection_hostname
     - paradedb_connection_port
     - paradedb_connection_username
