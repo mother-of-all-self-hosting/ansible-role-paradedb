@@ -28,7 +28,7 @@ paradedb_data_in_container_path: "/data"
 paradedb_bin_path: "{{ paradedb_base_path }}/bin"
 
 # renovate: datasource=docker depName=paradedb/paradedb versioning=semver
-paradedb_version: v0.26.8
+paradedb_version: v0.27.1
 
 paradedb_uid: ""
 paradedb_gid: ""
