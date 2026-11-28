@@ -29,7 +29,7 @@
         state: absent
 
     - name: Ensure ParadeDB container network does not exist
-      when: paradedb_container_network_deletion_enabled
+      when: paradedb_container_network_deletion_enabled and paradedb_container_network != 'host'
       block:
         - name: Ensure ParadeDB container network does not exist via community.docker.docker_network
           when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'

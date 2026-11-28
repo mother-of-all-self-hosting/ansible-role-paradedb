@@ -56,9 +56,11 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       {{ paradedb_container_image_to_use }} \
       postgres {{ paradedb_process_extra_arguments | join(' ') }}
 
+{% if paradedb_container_network != 'host' %}
 {% for network in paradedb_container_additional_networks %}
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ paradedb_identifier }}
 {% endfor %}
+{% endif %}
 
 ExecStart={{ devture_systemd_docker_base_host_command_docker }} start --attach {{ paradedb_identifier }}
 
