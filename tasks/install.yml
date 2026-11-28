@@ -131,7 +131,7 @@
     driver: bridge
     driver_options: "{{ devture_systemd_docker_base_container_networks_driver_options }}"
 
-- name: Ensure ParadeDB systemd service installed
+- name: Ensure ParadeDB systemd service is present
   ansible.builtin.template:
     src: "{{ role_path }}/templates/systemd/paradedb.service.j2"
     dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ paradedb_identifier }}.service"
