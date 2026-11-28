@@ -69,7 +69,7 @@
 # In fact, let's even get rid of the outdated service, to ensure no one will start it
 # and have it initialize a new database.
 
-- name: Ensure outdated ParadeDB service doesn't exist
+- name: Ensure outdated ParadeDB service does not exist
   ansible.builtin.file:
     path: "{{ devture_systemd_docker_base_systemd_path }}/{{ paradedb_identifier }}.service"
     state: absent

@@ -15,7 +15,7 @@
     path: "{{ server_path_paradedb_dump }}"
   register: result_server_path_paradedb_dump_stat
 
-- name: Fail if provided ParadeDB dump file doesn't exists
+- name: Fail if provided ParadeDB dump file does not exists
   ansible.builtin.fail:
     msg: "File cannot be found on the server at {{ server_path_paradedb_dump }}"
   when: "not result_server_path_paradedb_dump_stat.stat.exists"

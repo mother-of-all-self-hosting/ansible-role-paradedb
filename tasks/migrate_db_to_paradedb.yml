@@ -24,7 +24,7 @@
     path: "{{ paradedb_db_migration_request.src }}"
   register: paradedb_db_migration_request_src_stat_result
 
-- name: Fail if provided source database file doesn't exist
+- name: Fail if provided source database file does not exist
   ansible.builtin.fail:
     msg: "File cannot be found on the server at {{ paradedb_db_migration_request.src }}"
   when: "not paradedb_db_migration_request_src_stat_result.stat.exists"

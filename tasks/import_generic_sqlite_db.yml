@@ -15,7 +15,7 @@
     path: "{{ sqlite_database_path }}"
   register: sqlite_database_path_stat_result
 
-- name: Fail if provided SQLite database file doesn't exist
+- name: Fail if provided SQLite database file does not exist
   ansible.builtin.fail:
     msg: "File cannot be found on the server at {{ sqlite_database_path }}"
   when: "not sqlite_database_path_stat_result.stat.exists"
